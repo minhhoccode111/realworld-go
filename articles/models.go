@@ -148,11 +148,21 @@ func FindManyArticle(tag, author, limit, offset, favorited string) ([]ArticleMod
 		var tagModel TagModel
 		tx.Where(TagModel{Tag: tag}).First(&tagModel)
 		if tagModel.ID != 0 {
-			if err := tx.Model(&tagModel).Offset(offset_int).Limit(limit_int).Association("ArticleModels").Find(&models); err != nil {
+			// Get article IDs via association
+			var tempModels []ArticleModel
+			if err := tx.Model(&tagModel).Offset(offset_int).Limit(limit_int).Association("ArticleModels").Find(&tempModels); err != nil {
 				tx.Rollback()
 				return models, count, err
 			}
 			count = int(tx.Model(&tagModel).Association("ArticleModels").Count())
+			// Fetch articles with preloaded associations in single query, ordered by updated_at desc
+			if len(tempModels) > 0 {
+				var ids []uint
+				for _, m := range tempModels {
+					ids = append(ids, m.ID)
+				}
+				tx.Preload("Author.UserModel").Preload("Tags").Where("id IN ?", ids).Order("updated_at desc").Find(&models)
+			}
 		}
 	} else if author != "" {
 		var userModel users.UserModel
@@ -161,9 +171,19 @@ func FindManyArticle(tag, author, limit, offset, favorited string) ([]ArticleMod
 
 		if articleUserModel.ID != 0 {
 			count = int(tx.Model(&articleUserModel).Association("ArticleModels").Count())
-			if err := tx.Model(&articleUserModel).Offset(offset_int).Limit(limit_int).Association("ArticleModels").Find(&models); err != nil {
+			// Get article IDs via association
+			var tempModels []ArticleModel
+			if err := tx.Model(&articleUserModel).Offset(offset_int).Limit(limit_int).Association("ArticleModels").Find(&tempModels); err != nil {
 				tx.Rollback()
 				return models, count, err
+			}
+			// Fetch articles with preloaded associations in single query, ordered by updated_at desc
+			if len(tempModels) > 0 {
+				var ids []uint
+				for _, m := range tempModels {
+					ids = append(ids, m.ID)
+				}
+				tx.Preload("Author.UserModel").Preload("Tags").Where("id IN ?", ids).Order("updated_at desc").Find(&models)
 			}
 		}
 	} else if favorited != "" {
