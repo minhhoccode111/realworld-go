@@ -15,8 +15,9 @@ import (
 func TestConnectingDatabase(t *testing.T) {
 	asserts := assert.New(t)
 	db := Init()
+	dbPath := GetDBPath()
 	// Test create & close DB
-	_, err := os.Stat("./../gorm.db")
+	_, err := os.Stat(dbPath)
 	asserts.NoError(err, "Db should exist")
 	sqlDB, _ := db.DB()
 	asserts.NoError(sqlDB.Ping(), "Db should be able to ping")
@@ -28,19 +29,20 @@ func TestConnectingDatabase(t *testing.T) {
 	sqlDB.Close()
 
 	// Test DB exceptions
-	os.Chmod("./../gorm.db", 0000)
+	os.Chmod(dbPath, 0000)
 	db = Init()
 	sqlDB, _ = db.DB()
 	asserts.Error(sqlDB.Ping(), "Db should not be able to ping")
 	sqlDB.Close()
-	os.Chmod("./../gorm.db", 0644)
+	os.Chmod(dbPath, 0644)
 }
 
 func TestConnectingTestDatabase(t *testing.T) {
 	asserts := assert.New(t)
 	// Test create & close DB
 	db := TestDBInit()
-	_, err := os.Stat("./../gorm_test.db")
+	testDBPath := GetTestDBPath()
+	_, err := os.Stat(testDBPath)
 	asserts.NoError(err, "Db should exist")
 	sqlDB, _ := db.DB()
 	asserts.NoError(sqlDB.Ping(), "Db should be able to ping")
@@ -49,7 +51,7 @@ func TestConnectingTestDatabase(t *testing.T) {
 	// Test close delete DB
 	db = TestDBInit()
 	TestDBFree(db)
-	_, err = os.Stat("./../gorm_test.db")
+	_, err = os.Stat(testDBPath)
 
 	asserts.Error(err, "Db should not exist")
 }

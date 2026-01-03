@@ -11,8 +11,10 @@ import (
 
 func ArticlesRegister(router *gin.RouterGroup) {
 	router.GET("/feed", ArticleFeed)
+	router.POST("", ArticleCreate)
 	router.POST("/", ArticleCreate)
 	router.PUT("/:slug", ArticleUpdate)
+	router.PUT("/:slug/", ArticleUpdate)
 	router.DELETE("/:slug", ArticleDelete)
 	router.POST("/:slug/favorite", ArticleFavorite)
 	router.DELETE("/:slug/favorite", ArticleUnfavorite)
@@ -21,12 +23,14 @@ func ArticlesRegister(router *gin.RouterGroup) {
 }
 
 func ArticlesAnonymousRegister(router *gin.RouterGroup) {
+	router.GET("", ArticleList)
 	router.GET("/", ArticleList)
 	router.GET("/:slug", ArticleRetrieve)
 	router.GET("/:slug/comments", ArticleCommentList)
 }
 
 func TagsAnonymousRegister(router *gin.RouterGroup) {
+	router.GET("", TagList)
 	router.GET("/", TagList)
 }
 
